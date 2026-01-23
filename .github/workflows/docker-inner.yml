@@ -36,5 +36,5 @@ jobs:
           docker info
       - name: push to cluster
         run: |
-          echo '${{ secrets.CLUSTER_DOCKERHUB_USERNAME }}'
-          echo '${{ secrets.CLUSTER_DOCKERHUB_TOKEN }}'
+          docker login registry.h.pjlab.org.cn -p ${{ secrets.CLUSTER_DOCKERHUB_TOKEN }} -u ${{ secrets.CLUSTER_DOCKERHUB_USERNAME }}
+          
