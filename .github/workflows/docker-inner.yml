@@ -18,11 +18,9 @@ on:
 
 jobs:
   publish_docker_image:
-    runs-on: docker-inner
-    strategy:
-      fail-fast: false
+    runs-on: [self-hosted, docker-inner]
     env:
-      DOCKER_TAG: "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:${{inputs.image_tag}}"
+      DOCKER_TAG: "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:${{inputs.image_tag || 'latest'}}"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
