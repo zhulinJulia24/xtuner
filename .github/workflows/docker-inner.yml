@@ -25,25 +25,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Free disk space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # This might remove tools that are actually needed, if set to "true" but frees about 6 GB
-          tool-cache: false
-          docker-images: false
-          # All of these default to true, but feel free to set to "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: false
       - name: build manual tag
         if: inputs.image_type != 'latest' && github.event_name != 'schedule'
         run: |
           export date_today="$(date +'%Y%m%d-%H%M%S')"
-          echo ${GITHUB_SHA::7}
           export short_sha="${GITHUB_SHA::7}"
-          echo $short_sha
           export DOCKER_TAG="registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:pt${{ env.PYTORCH_VERSION }}_${short_sha}_${date_today}"
           echo $DOCKER_TAG
       - name: build latest
