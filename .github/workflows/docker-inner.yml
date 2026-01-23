@@ -8,6 +8,11 @@ on:
         description: 'Set docker image tag. Default is "latest"'
         type: string
         default: latest
+      torch_version:
+        required: true
+        description: 'Set docker torch version. Default is "2.9"'
+        type: string
+        default: '2.9'
   schedule:
     - cron:  '00 14 * * 0-4'
 
@@ -15,7 +20,7 @@ jobs:
   publish_docker_image:
     runs-on: [self-hosted, docker-inner]
     env:
-      DOCKER_TAG: "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:${{inputs.image_tag || 'latest'}}"
+      DOCKER_TAG: "pt${{inputs.torch_version || '2.9'}}_${{ github.GITHUB_SHA }}::7"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -31,9 +36,15 @@ jobs:
           haskell: true
           large-packages: true
           swap-storage: false
-      - name: build docker
+      - name: build manual tag
+        if: inputs.image_tag != 'latest' && github.event_name != 'schedule'
         run: |
-          docker info
+          export date_today="$(date +'%Y%m%d-%H%M%S')"
+          echo "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:${{ env.DOCKER_TAG }}_$date_today"
+      - name: build latest
+        if: inputs.image_tag == 'latest' || github.event_name == 'schedule'
+        run: |
+          echo "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:latest"
       - name: push to cluster
         run: |
           docker login registry.h.pjlab.org.cn -p ${{ secrets.CLUSTER_DOCKERHUB_TOKEN }} -u ${{ secrets.CLUSTER_DOCKERHUB_USERNAME }}
