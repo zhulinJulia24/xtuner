@@ -21,7 +21,7 @@ jobs:
     runs-on: [self-hosted, docker-inner]
     env:
       PYTORCH_VERSION: ${{ inputs.torch_version || '2.9' }}
-      DOCKER_TAG: "pt${{inputs.torch_version || '2.9'}}_${{ github.GITHUB_SHA }}::7"
+      DOCKER_TAG: "pt${{inputs.torch_version || '2.9'}}_${{ github.GITHUB_SHA }}"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -41,11 +41,13 @@ jobs:
         if: inputs.image_type != 'latest' && github.event_name != 'schedule'
         run: |
           export date_today="$(date +'%Y%m%d-%H%M%S')"
-          echo "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:${{ env.DOCKER_TAG }}_$date_today"
+          echo ${GITHUB_SHA::7}
+          export SHORT_SHA=${GITHUB_SHA::7}
+          echo "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:pt_${{ env.PYTORCH_VERSION }}_$SHORT_SHA_$date_today"
       - name: build latest
         if: inputs.image_type == 'latest' || github.event_name == 'schedule'
         run: |
-          echo "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:${{ env.PYTORCH_VERSION }}_latest"
+          echo "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:pt_${{ env.PYTORCH_VERSION }}_latest"
       - name: push to cluster
         run: |
           docker login registry.h.pjlab.org.cn -p ${{ secrets.CLUSTER_DOCKERHUB_TOKEN }} -u ${{ secrets.CLUSTER_DOCKERHUB_USERNAME }}
