@@ -1,0 +1,49 @@
+name: publish-docker-inner
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_ref:
+        required: false
+        description: 'Set branch or tag or commit id. Default is ""'
+        type: string
+        default: 'main'
+      image_tag:
+        required: true
+        description: 'Set docker image tag. Default is "latest"'
+        type: string
+        default: latest
+  schedule:
+    - cron:  '00 14 * * 0-4'
+
+jobs:
+  publish_docker_image:
+    runs-on: docker-inner
+    strategy:
+      fail-fast: false
+    env:
+      DOCKER_TAG: "registry.h.pjlab.org.cn/ailab-llmrazor/xtuner:${{inputs.image_tag}}"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.inputs.repo_ref}}
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # This might remove tools that are actually needed, if set to "true" but frees about 6 GB
+          tool-cache: false
+          docker-images: false
+          # All of these default to true, but feel free to set to "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: false
+      - name: build docker
+        run: |
+          docker info
+      - name: push to cluster
+        run: |
+          echo '${{ secrets.CLUSTER_DOCKERHUB_USERNAME }}'
+          echo '${{ secrets.CLUSTER_DOCKERHUB_TOKEN }}'
