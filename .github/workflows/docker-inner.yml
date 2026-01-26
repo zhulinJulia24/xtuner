@@ -10,9 +10,9 @@ on:
         default: latest
       torch_version:
         required: true
-        description: 'Set docker torch version. Default is "2.9"'
+        description: 'Set docker torch version. Default is "2.8.0"'
         type: string
-        default: '2.9'
+        default: '2.8.0'
   schedule:
     - cron:  '00 14 * * 0-4'
 
