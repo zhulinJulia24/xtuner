@@ -7,7 +7,7 @@ on:
         required: true
         description: 'Set docker image tag. Default is "latest", you can also set "auto" to genterate a formated tag, or input a manual tag'
         type: string
-        default: latest
+        default: pt28_latest
       torch_version:
         required: true
         description: 'Set docker torch version. Default is "2.8.0"'
