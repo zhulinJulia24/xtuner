@@ -27,7 +27,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: build auto tag
-        if: inputs.image_tag == 'auto' || github.event_name != 'schedule'
+        if: inputs.image_tag == 'auto' && github.event_name != 'schedule'
         run: |
           export TORCH_VERSION="${{ env.TORCH_VERSION }}"
           export IMAGE_NAME="${{ env.IMAGE_NAME }}"
