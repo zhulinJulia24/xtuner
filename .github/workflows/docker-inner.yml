@@ -7,7 +7,7 @@ on:
         required: true
         description: 'Set docker image tag. Default is "latest", you can also set "auto" to genterate a formated tag, or input a manual tag'
         type: string
-        default: pt28_latest
+        default: auto
       torch_version:
         required: true
         description: 'Set docker torch version. Default is "2.8.0"'
@@ -20,41 +20,36 @@ jobs:
   publish_docker_image:
     runs-on: [self-hosted, docker-inner]
     env:
-      IMAGE_NAME: 'registry.h.pjlab.org.cn/ailab-llmrazor-llmrazor_gpu/xtuner_tmp'
+      IMAGE_NAME: 'registry.h.pjlab.org.cn/ailab-llmrazor/xtuner'
+      IMAGE_TAG: ${{ inputs.image_tag || 'auto' }}
       TORCH_VERSION: ${{ inputs.torch_version || '2.8.0' }}
-      IMAGE_TAG: ${{ inputs.image_tag || 'pt28_latest' }}
+      SCHEDULE_TAG: 'pt28_latest'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: build auto tag
-        if: inputs.image_tag == 'auto' && github.event_name != 'schedule'
+
+      - name: parse tag
         run: |
-          export TORCH_VERSION="${{ env.TORCH_VERSION }}"
-          export IMAGE_NAME="${{ env.IMAGE_NAME }}"
-          if [ "${{ inputs.image_tag }}" = "auto" ]; then
+          if [[ "${GITHUB_EVENT_NAME}" == 'schedule' ]]; then
+            IMAGE_TAG="${SCHEDULE_TAG}"
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+          elif [[ "${IMAGE_TAG}" == 'auto' ]]; then
             DATE_TODAY="$(date +'%Y%m%d')"
             COMMIT_SHA="$(git rev-parse --short HEAD)"
-            export IMAGE_TAG="pt$(echo ${TORCH_VERSION} | awk -F. '{print $1$2}')_${DATE_TODAY}_${COMMIT_SHA}"
-          else
-            export IMAGE_TAG="${{ inputs.image_tag }}"
+            IMAGE_TAG="pt$(echo ${TORCH_VERSION} | awk -F. '{print $1$2}')_${DATE_TODAY}_${COMMIT_SHA}"
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
           fi
           echo "DOCKER_TAG=${IMAGE_NAME}:${IMAGE_TAG}" >> $GITHUB_ENV
 
-          cat ${{vars.EXTRA_DOCKERFILE}} >> image_build.sh
-          bash ${{ github.workspace }}/image_build.sh
-          echo "Built image with manual tag: ${IMAGE_NAME}:${IMAGE_TAG}"
-      - name: build specific tag
-        if: inputs.image_tag != 'auto' || github.event_name == 'schedule'
+      - name: build image
         run: |
-          export TORCH_VERSION="${{ env.TORCH_VERSION }}"
-          export IMAGE_NAME="${{ env.IMAGE_NAME }}"
-          export IMAGE_TAG="${{ env.IMAGE_TAG }}"
-          echo "DOCKER_TAG=${IMAGE_NAME}:${IMAGE_TAG}" >> $GITHUB_ENV
-
-          cat ${{vars.EXTRA_DOCKERFILE}} >> image_build.sh
+          cat ${{vars.EXTRA_DOCKERFILE}} >> ${{ github.workspace }}/Dockerfile
+          echo "IMAGE_NAME: ${IMAGE_NAME}, IMAGE_TAG: ${IMAGE_TAG}"
           bash ${{ github.workspace }}/image_build.sh
-          echo "Built image with manual tag: ${IMAGE_NAME}:${IMAGE_TAG}"
+          echo "Built image with tag: ${DOCKER_TAG}"
+
       - name: push to cluster
         run: |
           echo "$DOCKER_TAG"
           docker login registry.h.pjlab.org.cn -p ${{ secrets.CLUSTER_DOCKERHUB_TOKEN }} -u ${{ secrets.CLUSTER_DOCKERHUB_USERNAME }}
+          docker push $DOCKER_TAG
