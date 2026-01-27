@@ -30,6 +30,8 @@ jobs:
 
       - name: parse tag
         run: |
+          echo "GITHUB_EVENT_NAME=${GITHUB_EVENT_NAME}"
+          exit 1
           if [[ "${GITHUB_EVENT_NAME}" == 'schedule' ]]; then
             IMAGE_TAG="${SCHEDULE_TAG}"
             echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
